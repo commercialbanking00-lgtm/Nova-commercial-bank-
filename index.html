@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NOVA BANK — Demo Banking App</title>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --text:#141a2e; --muted:#6b7494; --line:#e4e8f2;
+  --brand:#2f4bff; --brand2:#6a3df0; --ok:#0da678; --bad:#e0483d; --warn:#e8a13a;
+  --shadow:0 8px 30px rgba(20,26,46,.08);
+}
+[data-theme="dark"]{
+  --bg:#0c1122; --card:#151b33; --text:#eef1fa; --muted:#9aa4c4; --line:#26304f;
+  --brand:#5b7bff; --brand2:#8f6bff; --shadow:0 8px 30px rgba(0,0,0,.4);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:var(--brand);text-decoration:none}
+button{font:inherit;cursor:pointer;border:none}
+input,select,textarea{font:inherit;width:100%;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--text)}
+label{font-size:13px;color:var(--muted);display:block;margin:12px 0 5px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow)}
+.btn{display:inline-block;padding:11px 18px;border-radius:11px;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;font-weight:600}
+.btn.ghost{background:transparent;border:1px solid var(--line);color:var(--text)}
+.btn.danger{background:var(--bad)} .btn.small{padding:7px 12px;font-size:13px}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.b-ok{background:rgba(13,166,120,.14);color:var(--ok)} .b-bad{background:rgba(224,72,61,.14);color:var(--bad)}
+.b-warn{background:rgba(232,161,58,.16);color:var(--warn)} .b-info{background:rgba(47,75,255,.12);color:var(--brand)}
+.demo-banner{background:repeating-linear-gradient(45deg,#e8a13a,#e8a13a 14px,#d98f22 14px,#d98f22 28px);color:#241a05;text-align:center;font-weight:700;font-size:12px;letter-spacing:.6px;padding:6px;text-transform:uppercase}
+/* ---------- auth ---------- */
+.auth-wrap{min-height:calc(100vh - 30px);display:flex;align-items:center;justify-content:center;padding:24px}
+.auth-card{max-width:420px;width:100%}
+.logo{font-size:30px;font-weight:800;letter-spacing:1px}
+.logo span{color:var(--brand)}
+/* ---------- shell ---------- */
+.shell{display:grid;grid-template-columns:230px 1fr;min-height:calc(100vh - 30px)}
+aside{border-right:1px solid var(--line);background:var(--card);padding:20px 12px;position:sticky;top:0;height:calc(100vh - 30px);overflow:auto}
+aside a{display:block;padding:10px 12px;border-radius:10px;color:var(--text);margin:2px 0;font-size:14px}
+aside a:hover,aside a.active{background:rgba(47,75,255,.1);color:var(--brand);font-weight:600}
+main{padding:26px;max-width:1050px}
+.topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:10px;flex-wrap:wrap}
+.grid{display:grid;gap:16px} .grid.c2{grid-template-columns:1fr 1fr} .grid.c3{grid-template-columns:repeat(3,1fr)}
+.balance-card{background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;border-radius:18px;padding:26px;box-shadow:var(--shadow)}
+.muted{color:var(--muted)} .big{font-size:34px;font-weight:800}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:left;padding:10px;border-bottom:1px solid var(--line)}
+th{color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.mt{margin-top:16px} .mb{margin-bottom:16px}
+.mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+.qa{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;border:1px solid var(--line);border-radius:14px;background:var(--card);cursor:pointer;font-size:13px}
+.qa:hover{border-color:var(--brand)}
+.modal-bg{position:fixed;inset:0;background:rgba(8,10,20,.6);display:flex;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal{background:var(--card);border-radius:18px;max-width:460px;width:100%;padding:26px;max-height:90vh;overflow:auto}
+.toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--bg);padding:13px 18px;border-radius:12px;z-index:99;font-weight:600;box-shadow:var(--shadow)}
+.cardface{background:linear-gradient(135deg,#1a2456,#3b2f8f);color:#fff;border-radius:16px;padding:22px;max-width:360px;box-shadow:var(--shadow)}
+.cardface.frozen{filter:grayscale(1) brightness(.7)}
+.chip{width:38px;height:28px;border-radius:6px;background:linear-gradient(135deg,#e8c15a,#b98a1e);margin:14px 0}
+.progress{height:10px;background:var(--line);border-radius:99px;overflow:hidden}
+.progress>div{height:100%;background:linear-gradient(90deg,var(--brand),var(--brand2))}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs button{padding:8px 14px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--text)}
+.tabs button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.pill-notif{position:relative}
+.pill-notif b{position:absolute;top:-6px;right:-8px;background:var(--bad);color:#fff;border-radius:99px;font-size:10px;padding:1px 6px}
+.mobile-nav{display:none}
+@media(max-width:860px){
+  .shell{grid-template-columns:1fr}
+  aside{display:none}
+  .mobile-nav{display:flex;position:fixed;bottom:0;left:0;right:0;background:var(--card);border-top:1px solid var(--line);z-index:40;justify-content:space-around;padding:8px 4px calc(8px + env(safe-area-inset-bottom))}
+  .mobile-nav a{font-size:11px;color:var(--muted);text-align:center;flex:1}
+  .mobile-nav a.active{color:var(--brand);font-weight:700}
+  .grid.c2,.grid.c3{grid-template-columns:1fr}
+  main{padding:16px 16px 90px}
+}
+.countdown{font-size:26px;font-weight:800;color:var(--warn);font-variant-numeric:tabular-nums}
+.checkline{padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px;display:flex;justify-content:space-between;gap:10px}
+h2.page{font-size:22px;margin-bottom:4px}
+h3{font-size:16px;margin-bottom:10px}
+hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+</style>
+<base target="_blank">
+</head>
+<body>
+<div class="demo-banner">NOVA BANK · Demo / simulation only — no real money, payments or payouts</div>
+<div id="app"></div>
+<div class="mobile-nav" id="mnav"></div>
+
+<script>
+/* ============================================================
+   NOVA BANK — single-file demo banking app (localStorage only)
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const uid = () => 'NV' + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2,7).toUpperCase();
+const ref = () => 'TXN-' + Date.now() + '-' + Math.random().toString(36).slice(2,8).toUpperCase();
+const now = () => new Date().toISOString();
+const fmt = n => '$' + Number(n).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc = s => String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const fdate = iso => new Date(iso).toLocaleString('en-US',{dateStyle:'medium',timeStyle:'short'});
+const DB = {
+  get(k,d){ try{ const v=localStorage.getItem('nova_'+k); return v?JSON.parse(v):d; }catch(e){ return d; } },
+  set(k,v){ localStorage.setItem('nova_'+k, JSON.stringify(v)); }
+};
+const SEED_USERS = [
+ {name:'Ava Demo', email:'ava.demo@gmail.com', pass:'demo1234', pin:'1234', balance:12500, acct:'NV-0001-0001', joined:'2024-03-11', role:'user', frozen:false},
+ {name:'Ben Carter', email:'ben.carter@gmail.com', pass:'demo1234', pin:'1234', balance:8300, acct:'NV-0001-0002', joined:'2024-06-02', role:'user', frozen:false},
+ {name:'Chloe Diaz', email:'chloe.diaz@gmail.com', pass:'demo1234', pin:'1234', balance:5400, acct:'NV-0001-0003', joined:'2025-01-19', role:'user', frozen:false},
+ {name:'NOVA Admin', email:'admin@nova.demo', pass:'admin1234', pin:'0000', balance:0, acct:'NV-ADMIN-000', joined:'2024-01-01', role:'admin', frozen:false}
+];
+if(!DB.get('users')) DB.set('users', SEED_USERS);
+if(!DB.get('transactions')) DB.set('transactions', []);
+if(!DB.get('deposits')) DB.set('deposits', []);
+if(!DB.get('withdrawals')) DB.set('withdrawals', []);
+if(!DB.get('notifications')) DB.set('notifications', []);
+if(!DB.get('tickets')) DB.set('tickets', []);
+if(!DB.get('audit')) DB.set('audit', []);
+if(!DB.get('savings')) DB.set('savings', {goals:[{name:'Emergency fund',target:5000,saved:1250},{name:'New laptop',target:1500,saved:600}]});
+
+const users = () => DB.get('users',[]);
+const saveUsers = u => DB.set('users',u);
+const txns = () => DB.get('transactions',[]);
+const saveTxns = t => DB.set('transactions',t);
+const sess = () => DB.get('session',null);
+const me = () => users().find(u=>u.email===sess()) || null;
+const isAdmin = () => me() && me().role==='admin';
+function saveMe(patch){ const u=users(); const i=u.findIndex(x=>x.email===sess()); if(i>-1){Object.assign(u[i],patch); saveUsers(u);} }
+function notify(email, title, body){ const n=DB.get('notifications',[]); n.unshift({id:uid(),email,title,body,time:now(),read:false}); DB.set('notifications',n); }
+function audit(action, detail){ const a=DB.get('audit',[]); a.unshift({id:uid(),by:sess()||'system',action,detail,time:now()}); DB.set('audit',a); }
+function addTxn(t){ const x=txns(); x.unshift(t); saveTxns(x); }
+
+function toast(msg){ const t=document.createElement('div'); t.className='toast'; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
+function modal(html){ closeModal(); const m=document.createElement('div'); m.className='modal-bg'; m.id='modalBg'; m.innerHTML=`<div class="modal">${html}</div>`; m.addEventListener('click',e=>{if(e.target===m)closeModal();}); document.body.appendChild(m); }
+function closeModal(){ const m=$('#modalBg'); if(m)m.remove(); }
+function confirmBox(msg,cb){ modal(`<h3>Please confirm</h3><p class="muted">${esc(msg)}</p><div class="row mt"><button class="btn" id="cfOk">Confirm</button><button class="btn ghost" onclick="closeModal()">Cancel</button></div>`); $('#cfOk').onclick=()=>{closeModal();cb();}; }
+function statusBadge(s){ const m={completed:'b-ok',pending:'b-warn',failed:'b-bad',rejected:'b-bad',approved:'b-ok',frozen:'b-info',active:'b-ok'}; return `<span class="badge ${m[s]||'b-info'}">${s}</span>`; }
+function downloadText(name, text){ const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([text],{type:'text/plain'})); a.download=name; a.click(); }
+
+/* ---------------- ROUTER ---------------- */
+const routes = ['dashboard','transfers','cards','history','profile','deposits','withdrawals','savings','notifications','settings','support','admin'];
+function go(r){ location.hash = r==='dashboard' ? '#/' : '#/'+r; }
+function route(){
+  const h=(location.hash||'#/').replace('#/','')||'dashboard';
+  const r = routes.includes(h)?h:'dashboard';
+  if(!sess()) return renderAuth('login');
+  if(r==='admin' && !isAdmin()) return renderDashboard();
+  render(r);
+}
+window.addEventListener('hashchange', route);
+
+/* ---------------- AUTH ---------------- */
+function renderAuth(mode){
+  $('#mnav').innerHTML='';
+  const isLogin = mode==='login';
+  $('#app').innerHTML = `<div class="auth-wrap"><div class="card auth-card">
+    <div class="logo">NOVA<span>BANK</span></div>
+    <p class="muted" style="margin:6px 0 14px">Demo banking · ${isLogin?'Sign in to your account':'Create your demo account'}</p>
+    ${!isLogin?`<label>Full name</label><input id="au_name" placeholder="Jane Doe">`:''}
+    <label>Gmail address</label><input id="au_email" type="email" placeholder="you@gmail.com">
+    <label>Password</label><input id="au_pass" type="password" placeholder="••••••••">
+    ${!isLogin?`<label>Confirm password</label><input id="au_pass2" type="password" placeholder="••••••••">
+    <label>Create transfer PIN (4 digits)</label><input id="au_pin" maxlength="4" placeholder="1234">`:''}
+    ${isLogin?`<label class="row" style="margin-top:12px"><input type="checkbox" id="au_remember" style="width:auto"> <span>Remember me</span></label>
+    <p style="margin-top:10px"><a href="javascript:renderAuth('forgot')">Forgot password?</a></p>`:''}
+    <button class="btn mt" style="width:100%" id="au_go">${isLogin?'Log in':'Sign up'}</button>
+    <p class="mt muted" style="font-size:13px">${isLogin?`New here? <a href="javascript:renderAuth('signup')">Create account</a>`:`Have an account? <a href="javascript:renderAuth('login')">Log in</a>`}</p>
+    <hr><p class="muted" style="font-size:12px">Demo logins — user: <span class="mono">ava.demo@gmail.com / demo1234</span> · admin: <span class="mono">admin@nova.demo / admin1234</span></p>
+  </div></div>`;
+  $('#au_go').onclick = () => {
+    const email=$('#au_email').value.trim().toLowerCase(), pass=$('#au_pass').value;
+    if(isLogin){
+      const u=users().find(x=>x.email===email && x.pass===pass);
+      if(!u) return toast('Invalid credentials');
+      if(u.frozen) return toast('Account suspended. Contact support.');
+      DB.set('session', email);
+      if(!$('#au_remember') || !$('#au_remember').checked) sessionStorage.setItem('nova_volatile','1');
+      notify(email,'New login detected','A login to your NOVA BANK demo account just occurred.');
+      audit('LOGIN', email); toast('Welcome back, '+u.name.split(' ')[0]); go('dashboard');
+    } else {
+      const name=$('#au_name').value.trim(), p2=$('#au_pass2').value, pin=$('#au_pin').value;
+      if(!name||!email||!pass) return toast('Fill in all fields');
+      if(!email.endsWith('@gmail.com')) return toast('Registration requires a Gmail address');
+      if(pass.length<6) return toast('Password must be at least 6 characters');
+      if(pass!==p2) return toast('Passwords do not match');
+      if(!/^\d{4}$/.test(pin)) return toast('PIN must be 4 digits');
+      if(users().some(u=>u.email===email)) return toast('Account already exists');
+      const u=users(); u.push({name,email,pass,pin,balance:5000,acct:'NV-'+String(u.length).padStart(4,'0')+'-'+Math.floor(1000+Math.random()*9000),joined:new Date().toISOString().slice(0,10),role:'user',frozen:false});
+      saveUsers(u); audit('SIGNUP', email);
+      notify(email,'Welcome to NOVA BANK','Your demo account is ready. $5,000 demo balance credited.');
+      toast('Account created — please log in'); renderAuth('login');
+    }
+  };
+  if(mode==='forgot'){
+    $('#app').innerHTML = `<div class="auth-wrap"><div class="card auth-card"><div class="logo">NOVA<span>BANK</span></div>
+      <h3 class="mt">Reset password</h3><p class="muted">Demo flow: enter your Gmail to receive a reset link (simulated).</p>
+      <label>Gmail address</label><input id="fp_email" type="email" placeholder="you@gmail.com">
+      <button class="btn mt" style="width:100%" id="fp_go">Send reset link</button>
+      <p class="mt"><a href="javascript:renderAuth('login')">Back to log in</a></p></div></div>`;
+    $('#fp_go').onclick=()=>{ const e=$('#fp_email').value.trim().toLowerCase(); const u=users().find(x=>x.email===e);
+      if(!u) return toast('No account found');
+      modal(`<h3>Email verification (demo)</h3><p class="muted">A verification/reset link was simulated to <b>${esc(e)}</b>.</p>
+        <label>Enter new password</label><input id="rp1" type="password"><label>Confirm new password</label><input id="rp2" type="password">
+        <button class="btn mt" style="width:100%" id="rp_go">Reset password</button>`);
+      $('#rp_go').onclick=()=>{ if($('#rp1').value.length<6) return toast('Min 6 characters'); if($('#rp1').value!==$('#rp2').value) return toast('Passwords do not match');
+        const us=users(); us.find(x=>x.email===e).pass=$('#rp1').value; saveUsers(us); audit('PASSWORD_RESET',e);
+        closeModal(); toast('Password updated'); renderAuth('login'); };
+    };
+  }
+}
+
+/* ---------------- SHELL ---------------- */
+const NAV = [['dashboard','Home'],['transfers','Transfers'],['cards','Cards'],['history','History'],['deposits','Deposits'],['withdrawals','Withdrawals'],['savings','Savings'],['notifications','Notifications'],['support','Support'],['settings','Settings']];
+function shell(active, inner){
+  const u=me(); const notifCount=DB.get('notifications',[]).filter(n=>n.email===u.email&&!n.read).length;
+  const links = NAV.concat(isAdmin()?[['admin','Admin']]:[]);
+  $('#app').innerHTML = `<div class="shell"><aside>
+    <div class="logo" style="font-size:22px">NOVA<span>BANK</span></div>
+    <p class="muted" style="font-size:11px;margin:2px 0 14px">demo build</p>
+    ${links.map(([r,l])=>`<a href="#/${r==='dashboard'?'':r}" class="${r===active?'active':''}">${l}${r==='notifications'&&notifCount?` <span class="badge b-bad">${notifCount}</span>`:''}</a>`).join('')}
+    <hr><a href="javascript:logout()">Log out</a>
+  </aside><main><div class="topbar">
+      <h2 class="page">${links.find(l=>l[0]===active)?.[1]||'NOVA BANK'}</h2>
+      <div class="row"><a href="#/profile" class="row" style="gap:8px"><span style="width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:inline-flex;align-items:center;justify-content:center;font-weight:700">${esc(u.name[0])}</span><span>${esc(u.name.split(' ')[0])}</span></a></div>
+    </div>${inner}</main></div>`;
+  $('#mnav').innerHTML = ['dashboard','transfers','history','settings'].map(r=>`<a href="#/${r==='dashboard'?'':r}" class="${r===active?'active':''}">${{dashboard:'Home',transfers:'Transfers',history:'History',settings:'Settings'}[r]}</a>`).join('');
+}
+function logout(){ audit('LOGOUT', sess()); localStorage.removeItem('nova_session'); sessionStorage.clear(); toast('Logged out'); renderAuth('login'); }
+
+/* ---------------- DASHBOARD ---------------- */
+let hideBal = DB.get('hideBal', false);
+function renderDashboard(){ render('dashboard'); }
+function render(r){
+  closeModal();
+  const u=me(); if(!u) return renderAuth('login');
+  const myTx = txns().filter(t=>t.from===u.email||t.to===u.email);
+  if(r==='dashboard'){
+    shell('dashboard', `
+    <p class="muted">Welcome back, ${esc(u.name.split(' ')[0])} 👋 — here is your account overview.</p>
+    <div class="grid c2 mt">
+      <div class="balance-card">
+        <div class="row" style="justify-content:space-between"><span>Available balance (demo)</span>
+        <button class="btn small ghost" style="color:#fff;border-color:rgba(255,255,255,.4)" onclick="toggleBal()">${hideBal?'Show':'Hide'}</button></div>
+        <div class="big mt">${hideBal?'••••••':fmt(u.balance)}</div>
+        <p style="opacity:.85;margin-top:6px">${esc(u.name)} · <span class="mono">${esc(u.acct)}</span></p>
+        <div class="row mt"><button class="btn small" style="background:#fff;color:var(--brand)" onclick="copyText('${u.email} · ${u.acct}')">Copy account details</button></div>
+      </div>
+      <div class="grid c2">
+        ${[['transfers','💸 Send money'],['deposits','➕ Deposit'],['withdrawals','➖ Withdraw'],['savings','🎯 Savings']].map(([x,l])=>`<div class="qa" onclick="go('${x}')"><div style="font-size:22px">${l.split(' ')[0]}</div>${l.split(' ').slice(1).join(' ')}</div>`).join('')}
+      </div>
+    </div>
+    <div class="card mt"><div class="row" style="justify-content:space-between"><h3>Recent transactions</h3><a href="#/history">View all</a></div>
+      ${txList(myTx.slice(0,5))||'<p class="muted mt">No transactions yet. Send money to another demo user to get started.</p>'}
+    </div>`);
+  }
+  else if(r==='transfers') renderTransfers();
+  else if(r==='history') renderHistory();
+  else if(r==='deposits') renderDeposits();
+  else if(r==='withdrawals') renderWithdrawals();
+  else if(r==='cards') renderCards();
+  else if(r==='notifications') renderNotifications();
+  else if(r==='profile') renderProfile();
+  else if(r==='settings') renderSettings();
+  else if(r==='savings') renderSavings();
+  else if(r==='support') renderSupport();
+  else if(r==='admin') renderAdmin();
+}
+function toggleBal(){ hideBal=!hideBal; DB.set('hideBal',hideBal); render('dashboard'); }
+function copyText(t){ (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Copied to clipboard')).catch(()=>{prompt('Copy:',t);}); }
+
+function txList(list){
+  if(!list.length) return '';
+  return `<table><tr><th>Transaction</th><th>Reference</th><th>Status</th><th style="text-align:right">Amount</th></tr>`+
+    list.map(t=>{ const out=t.from===me().email; const other=out?t.toName:t.fromName;
+      return `<tr style="cursor:pointer" onclick="viewTxn('${t.id}')"><td><b>${out?'Sent to':'Received from'} ${esc(other)}</b><br><span class="muted" style="font-size:12px">${fdate(t.time)}</span></td>
+      <td class="mono" style="font-size:12px">${t.ref}</td><td>${statusBadge(t.status)}</td>
+      <td style="text-align:right;color:${out?'var(--bad)':'var(--ok)'};font-weight:700">${out?'−':'+'}${fmt(t.amount)}</td></tr>`;}).join('')+`</table>`;
+}
+function viewTxn(id){
+  const t=txns().find(x=>x.id===id); if(!t) return;
+  const out=t.from===me().email;
+  modal(`<h3>Transaction details ${statusBadge(t.status)}</h3>
+    <div class="checkline"><span>Type</span><b>${out?'Money sent':'Money received'}</b></div>
+    <div class="checkline"><span>${out?'To':'From'}</span><b>${esc(out?t.toName:t.fromName)}</b></div>
+    <div class="checkline"><span>Account</span><b class="mono">${esc(out?t.toAcct:t.fromAcct)}</b></div>
+    <div class="checkline"><span>Amount</span><b>${fmt(t.amount)}</b></div>
+    <div class="checkline"><span>Description</span><b>${esc(t.desc||'—')}</b></div>
+    <div class="checkline"><span>Transaction ID</span><b class="mono">${t.id}</b></div>
+    <div class="checkline"><span>Reference</span><b class="mono">${t.ref}</b></div>
+    <div class="checkline"><span>Date</span><b>${fdate(t.time)}</b></div>
+    <p class="muted mt" style="font-size:12px">Simulated demo transaction — not a real payment.</p>
+    <div class="row mt"><button class="btn small" onclick="viewReceipt('${t.id}')">View receipt</button>
+    <button class="btn small ghost" onclick="downloadStatementOne('${t.id}')">Download</button></div>`);
+}
+
+/* ---------------- TRANSFERS + RECEIPTS ---------------- */
+let draft = null;
+function renderTransfers(){
+  shell('transfers', `
+  <p class="muted">Send demo funds to another NOVA BANK user. Transfers are simulated and update both demo ledgers.</p>
+  <div class="card mt" style="max-width:560px">
+    <label>Search recipient (Gmail or account number)</label>
+    <input id="tr_q" placeholder="e.g. ben.carter@gmail.com or NV-0001-0002">
+    <div id="tr_res" class="mt"></div>
+    <div id="tr_form"></div>
+  </div>
+  <div class="card mt"><h3>Transfer history</h3>${txList(txns().filter(t=>t.from===me().email||t.to===me().email).slice(0,10))||'<p class="muted">No transfers yet.</p>'}</div>`);
+  $('#tr_q').oninput = e => {
+    const q=e.target.value.trim().toLowerCase();
+    const found = q? users().filter(x=>x.role==='user' && x.email!==me().email && (x.email.toLowerCase().includes(q)||x.acct.toLowerCase().includes(q))) : [];
+    $('#tr_res').innerHTML = found.map(u=>`<div class="card" style="box-shadow:none;padding:12px;margin-bottom:8px;cursor:pointer" onclick="pickRecipient('${u.email}')"><b>${esc(u.name)}</b> <span class="muted">· ${esc(u.email)} · <span class="mono">${esc(u.acct)}</span></span></div>`).join('') || (q?'<p class="muted">No matching demo users.</p>':'');
+  };
+}
+function pickRecipient(email){
+  const u=users().find(x=>x.email===email);
+  $('#tr_form').innerHTML = `<hr><div class="row" style="justify-content:space-between"><div><b>${esc(u.name)}</b><br><span class="muted" style="font-size:13px">${esc(u.email)} · <span class="mono">${esc(u.acct)}</span></span></div><button class="btn small ghost" onclick="renderTransfers()">Change</button></div>
+  <label>Amount (USD)</label><input id="tr_amt" type="number" min="1" step="0.01" placeholder="0.00">
+  <label>Description (optional)</label><input id="tr_desc" placeholder="e.g. Dinner split">
+  <button class="btn mt" style="width:100%" id="tr_review">Review transfer</button>`;
+  $('#tr_review').onclick = () => {
+    const amt=parseFloat($('#tr_amt').value);
+    if(!amt||amt<=0) return toast('Enter a valid amount');
+    if(amt>me().balance) return toast('Insufficient demo balance');
+    draft={to:u.email, amount:amt, desc:$('#tr_desc').value.trim()};
+    modal(`<h3>Confirm transfer</h3>
+      <div class="checkline"><span>To</span><b>${esc(u.name)}</b></div>
+      <div class="checkline"><span>Account</span><b class="mono">${esc(u.acct)}</b></div>
+      <div class="checkline"><span>Amount</span><b>${fmt(amt)}</b></div>
+      <div class="checkline"><span>Fee</span><b>$0.00</b></div>
+      <label class="mt">Enter your 4-digit transfer PIN</label><input id="tr_pin" maxlength="4" type="password" inputmode="numeric">
+      <button class="btn mt" style="width:100%" id="tr_pin_go">Authorize transfer</button>`);
+    $('#tr_pin_go').onclick = executeTransfer;
+  };
+}
+function executeTransfer(){
+  const pin=$('#tr_pin').value;
+  if(pin!==me().pin) { toast('Incorrect PIN — transfer failed'); audit('TRANSFER_FAILED_PIN', draft.to); return; }
+  const {to,amount,desc}=draft; const recipient=users().find(x=>x.email===to);
+  // prevent duplicate: same recipient+amount within 30s
+  const dup=txns().find(t=>t.from===me().email&&t.to===to&&t.amount===amount&&(Date.now()-new Date(t.time).getTime())<30000);
+  if(dup) { closeModal(); toast('Duplicate transfer blocked'); return; }
+  const t={id:uid(),ref:ref(),from:me().email,fromName:me().name,fromAcct:me().acct,to,toName:recipient.name,toAcct:recipient.acct,amount,desc,status:'completed',time:now()};
+  const us=users(); us.find(x=>x.email===me().email).balance-=amount; us.find(x=>x.email===to).balance+=amount; saveUsers(us);
+  addTxn(t);
+  notify(to, `You received ${fmt(amount)}`, `${me().name} sent you a demo transfer (${t.ref}).`);
+  notify(me().email, `You sent ${fmt(amount)}`, `Your transfer to ${recipient.name} completed (${t.ref}).`);
+  audit('TRANSFER', `${me().email} -> ${to} ${fmt(amount)} ${t.ref}`);
+  draft=null; closeModal(); toast('Transfer successful');
+  viewReceipt(t.id);
+}
+function viewReceipt(id){
+  const t=txns().find(x=>x.id===id); if(!t) return;
+  const out=t.from===me().email;
+  const receipt = `NOVA BANK — DEMO E-RECEIPT\n==============================\nTransaction ID : ${t.id}\nReference      : ${t.ref}\nStatus         : ${t.status.toUpperCase()}\nDate           : ${fdate(t.time)}\nSender         : ${t.fromName} (${t.fromAcct})\nReceiver       : ${t.toName} (${t.toAcct})\nAmount sent    : ${fmt(t.amount)}\nAmount received: ${fmt(t.amount)}\nDescription    : ${t.desc||'-'}\n\nBoth sender and receiver hold receipts with\nidentical transaction ID and reference.\nThis is a simulated demo receipt, not proof\nof a real payment.`;
+  modal(`<h3>✅ Receipt ${statusBadge(t.status)}</h3>
+    <div class="checkline"><span>Transaction ID</span><b class="mono">${t.id}</b></div>
+    <div class="checkline"><span>Reference</span><b class="mono">${t.ref}</b></div>
+    <div class="checkline"><span>Sender</span><b>${esc(t.fromName)} · <span class="mono">${esc(t.fromAcct)}</span></b></div>
+    <div class="checkline"><span>Receiver</span><b>${esc(t.toName)} · <span class="mono">${esc(t.toAcct)}</span></b></div>
+    <div class="checkline"><span>Amount sent / received</span><b>${fmt(t.amount)}</b></div>
+    <div class="checkline"><span>Date & time</span><b>${fdate(t.time)}</b></div>
+    <p class="muted mt" style="font-size:12px">Saved to both users' accounts. Identical ID and reference on both sides. Demo only.</p>
+    <div class="row mt">
+      <button class="btn small" onclick='downloadText("nova-receipt-${t.ref}.txt",${JSON.stringify(receipt)})'>Download</button>
+      <button class="btn small ghost" id="sh">Share</button>
+      <button class="btn small ghost" onclick="closeModal()">Close</button>
+    </div>`);
+  $('#sh').onclick=()=>{ if(navigator.share) navigator.share({title:'NOVA BANK demo receipt',text:receipt}).catch(()=>{}); else copyText(receipt); };
+}
+function downloadStatementOne(id){
+  const t=txns().find(x=>x.id===id);
+  downloadText(`nova-statement-${t.ref}.txt`, `NOVA BANK DEMO STATEMENT\n${t.id}\n${t.ref}\n${fdate(t.time)}\n${t.status}\n${t.fromName} -> ${t.toName}\n${fmt(t.amount)}\n(Simulated — not a real statement)`);
+  toast('Statement downloaded');
+}
+
+/* ---------------- DEPOSITS (never credit balance) ---------------- */
+function renderDeposits(){
+  const mine=DB.get('deposits',[]).filter(d=>d.email===me().email);
+  shell('deposits', `
+  <div class="card" style="border-left:4px solid var(--warn)"><b>Deposits are not enabled.</b> No funds have been credited to this account. Deposit requests are recorded for review only and <b>never</b> change your balance.</div>
+  <div class="card mt" style="max-width:560px">
+    <h3>New deposit request</h3>
+    <label>Amount (USD)</label><input id="dp_amt" type="number" min="1" step="0.01">
+    <label>Payment method</label><select id="dp_m"><option>Bank transfer</option><option>Debit card</option><option>Mobile money</option></select>
+    <label>Upload payment proof</label><input id="dp_f" type="file">
+    <button class="btn mt" style="width:100%" id="dp_go">Submit request</button>
+    <p class="muted mt" style="font-size:12px">⚠️ Uploading proof or submitting this request will <b>not</b> increase your balance.</p>
+  </div>
+  <div class="card mt"><h3>Deposit history</h3>
+  ${mine.length?`<table><tr><th>Reference</th><th>Amount</th><th>Method</th><th>Proof</th><th>Status</th></tr>${mine.map(d=>`<tr><td class="mono">${d.ref}</td><td>${fmt(d.amount)}</td><td>${esc(d.method)}</td><td>${esc(d.proof||'—')}</td><td>${statusBadge(d.status)}</td></tr>`).join('')}</table>`:'<p class="muted">No deposit requests yet.</p>'}</div>`);
+  $('#dp_go').onclick=()=>{
+    const amt=parseFloat($('#dp_amt').value); if(!amt||amt<=0) return toast('Enter a valid amount');
+    const balBefore=me().balance;
+    const d={id:uid(),ref:ref(),email:me().email,amount:amt,method:$('#dp_m').value,proof:$('#dp_f').files[0]?.name||'',status:'pending',time:now()};
+    const ds=DB.get('deposits',[]); ds.unshift(d); DB.set('deposits',ds);
+    if(me().balance!==balBefore){ saveMe({balance:balBefore}); } // enforce: no crediting
+    notify(me().email,'Deposit request received',`Ref ${d.ref} is pending review. No funds were credited.`);
+    audit('DEPOSIT_REQUEST', d.ref+' '+fmt(amt));
+    toast('Request submitted — no funds credited'); renderDeposits();
+  };
+}
+
+/* ---------------- WITHDRAWALS (scratch card + 5h loop) ---------------- */
+const WD_KEY='wd_state';
+function renderWithdrawals(){
+  let st=DB.get(WD_KEY,null);
+  // 5-hour auto rejection / reset loop
+  if(st && st.status==='reviewing' && Date.now()>st.deadline){
+    const ws=DB.get('withdrawals',[]); const w=ws.find(x=>x.id===st.id); if(w) w.status='rejected';
+    DB.set('withdrawals',ws);
+    notify(me().email,'Withdrawal verification failed','The 5-hour verification window expired. Please upload the photo again.');
+    audit('WITHDRAWAL_RESET_LOOP', st.id);
+    DB.removeItem ? null : null; localStorage.removeItem('nova_'+WD_KEY);
+    st=null; toast('Verification window expired — please re-upload');
+  }
+  const mine=DB.get('withdrawals',[]).filter(w=>w.email===me().email);
+  let body='';
+  if(!st){
+    body=`<div class="card" style="max-width:560px"><h3>Request a withdrawal (demo)</h3>
+    <label>Amount (USD)</label><input id="wd_amt" type="number" min="1" step="0.01">
+    <label>Withdrawal method</label><select id="wd_m"><option>Bank transfer</option><option>Mobile money</option><option>Cash pickup</option></select>
+    <label>Withdrawal details (account / phone / location)</label><input id="wd_d" placeholder="e.g. IBAN or mobile number">
+    <label>Upload scratch card photo <span class="badge b-warn">required</span></label><input id="wd_f" type="file" accept="image/*">
+    <button class="btn mt" style="width:100%" id="wd_go">Submit request</button>
+    <p class="muted mt" style="font-size:12px">Demo withdrawals are simulated — they are never real payouts.</p></div>`;
+  } else if(st.status==='reviewing'){
+    body=`<div class="card" style="max-width:560px;text-align:center"><h3>⏳ Verification in progress</h3>
+    <p class="muted">Your scratch card photo is under review. If verification does not complete within 5 hours, the request is automatically rejected and returns to the upload step.</p>
+    <div class="countdown mt" id="wd_cd"></div>
+    <div class="progress mt"><div id="wd_pb" style="width:0%"></div></div>
+    <p class="muted mt" style="font-size:12px">Request <span class="mono">${st.id}</span> · submitted ${fdate(st.started)}</p></div>`;
+  }
+  shell('withdrawals', `<div class="card" style="border-left:4px solid var(--brand)"><b>Demo mode:</b> withdrawal requests are simulated for testing only and are <b>not</b> real payouts.</div><div class="mt"></div>${body}
+  <div class="card mt"><h3>Withdrawal history</h3>
+  ${mine.length?`<table><tr><th>Reference</th><th>Amount</th><th>Method</th><th>Status</th><th>Note</th></tr>${mine.map(w=>`<tr><td class="mono">${w.ref}</td><td>${fmt(w.amount)}</td><td>${esc(w.method)}</td><td>${statusBadge(w.status)}</td><td class="muted" style="font-size:12px">${esc(w.note||'')}</td></tr>`).join('')}</table>`:'<p class="muted">No withdrawal requests yet.</p>'}</div>`);
+  if(!st){
+    const g=$('#wd_go'); if(g) g.onclick=()=>{
+      const amt=parseFloat($('#wd_amt').value); const f=$('#wd_f').files[0];
+      if(!amt||amt<=0) return toast('Enter a valid amount');
+      if(!f) return toast('Scratch card photo is required');
+      if(amt>me().balance) return toast('Insufficient demo balance');
+      const w={id:uid(),ref:ref(),email:me().email,amount:amt,method:$('#wd_m').value,details:$('#wd_d').value,photo:f.name,status:'pending',time:now(),note:'Awaiting scratch card review'};
+      const ws=DB.get('withdrawals',[]); ws.unshift(w); DB.set('withdrawals',ws);
+      saveMe({balance: me().balance - amt}); // demo: funds held, not paid out
+      DB.set(WD_KEY,{id:w.id,status:'reviewing',started:now(),deadline:Date.now()+5*60*60*1000});
+      notify(me().email,'Withdrawal under review',`Ref ${w.ref}: 5-hour verification countdown started.`);
+      audit('WITHDRAWAL_REQUEST', w.ref+' '+fmt(amt));
+      toast('Request submitted for 5-hour review'); renderWithdrawals();
+    };
+  } else {
+    const tick=()=>{
+      const el=$('#wd_cd'); if(!el) return;
+      const left=st.deadline-Date.now();
+      if(left<=0){ renderWithdrawals(); return; }
+      const h=Math.floor(left/36e5), m=Math.floor(left%36e5/6e4), s=Math.floor(left%6e4/1e3);
+      el.textContent=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      $('#wd_pb').style.width=(100-left/(5*36e5)*100)+'%';
+      setTimeout(tick,1000);
+    }; tick();
+  }
+}
+
+/* ---------------- HISTORY ---------------- */
+function renderHistory(){
+  let filter='all', q='';
+  const draw=()=>{
+    let list=txns().filter(t=>t.from===me().email||t.to===me().email);
+    if(filter==='sent') list=list.filter(t=>t.from===me().email);
+    if(filter==='received') list=list.filter(t=>t.to===me().email);
+    if(filter==='completed'||filter==='pending'||filter==='failed') list=list.filter(t=>t.status===filter);
+    if(q) list=list.filter(t=>(t.ref+t.toName+t.fromName+(t.desc||'')).toLowerCase().includes(q));
+    $('#hx_list').innerHTML = txList(list)||'<p class="muted mt">Nothing matches this filter.</p>';
+  };
+  shell('history', `
+  <div class="tabs">${[['all','All'],['sent','Money sent'],['received','Money received'],['completed','Successful'],['failed','Failed']].map(([k,l])=>`<button data-f="${k}" class="${k==='all'?'on':''}">${l}</button>`).join('')}</div>
+  <input id="hx_q" placeholder="Search by reference, name or description…">
+  <div class="card mt" id="hx_list"></div>
+  <div class="row mt"><button class="btn ghost" id="hx_stmt">Download account statement (all demo transactions)</button></div>
+  <p class="muted mt" style="font-size:12px">All entries are simulated demo transactions, clearly distinguished from real payments.</p>`);
+  document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.tabs button').forEach(x=>x.classList.remove('on')); b.classList.add('on'); filter=b.dataset.f; draw(); });
+  $('#hx_q').oninput=e=>{q=e.target.value.toLowerCase();draw();};
+  $('#hx_stmt').onclick=()=>{
+    const list=txns().filter(t=>t.from===me().email||t.to===me().email);
+    downloadText('nova-demo-statement.txt','NOVA BANK — DEMO ACCOUNT STATEMENT\nAccount: '+me().acct+' ('+me().email+')\nGenerated: '+fdate(now())+'\n\n'+(list.map(t=>`${t.time} | ${t.ref} | ${t.fromName} -> ${t.toName} | ${fmt(t.amount)} | ${t.status}`).join('\n')||'No transactions')+'\n\nSIMULATED STATEMENT — not a real bank statement.');
+    toast('Statement downloaded');
+  };
+  draw();
+}
+
+/* ---------------- CARDS ---------------- */
+function cardState(){ return DB.get('card_'+me().email,{num:'5399 88•• •••• '+String(Math.floor(1000+Math.random()*9000)),exp:'12/29',frozen:false,replaced:0}); }
+function saveCard(c){ DB.set('card_'+me().email,c); }
+function renderCards(){
+  const c=cardState();
+  const cardTx=txns().filter(t=>t.from===me().email).slice(0,6);
+  shell('cards', `<div class="grid c2">
+  <div><div class="cardface ${c.frozen?'frozen':''}"><div class="row" style="justify-content:space-between"><b>NOVA BANK</b><span>${c.frozen?'❄️ FROZEN':'💳 VIRTUAL'}</span></div><div class="chip"></div>
+    <div class="mono" style="font-size:19px;letter-spacing:2px">${c.num}</div>
+    <div class="row mt" style="justify-content:space-between"><span>${esc(me().name.toUpperCase())}</span><span>EXP ${c.exp}</span></div></div>
+    <div class="row mt"><button class="btn small" id="cd_frz">${c.frozen?'Unfreeze card':'Freeze card'}</button>
+    <button class="btn small ghost" id="cd_rep">Replace card</button></div>
+    <p class="muted mt" style="font-size:12px">Demo virtual debit card — number is simulated.</p></div>
+  <div class="card"><h3>Card transaction history</h3>${txList(cardTx)||'<p class="muted">No card transactions yet.</p>'}</div></div>`);
+  $('#cd_frz').onclick=()=>{ c.frozen=!c.frozen; saveCard(c); notify(me().email, c.frozen?'Card frozen':'Card unfrozen','Your virtual demo card status changed.'); audit('CARD_'+(c.frozen?'FREEZE':'UNFREEZE'), me().email); toast(c.frozen?'Card frozen':'Card unfrozen'); renderCards(); };
+  $('#cd_rep').onclick=()=>confirmBox('Generate a new demo card number?',()=>{ c.num='5399 88•• •••• '+String(Math.floor(1000+Math.random()*9000)); c.replaced++; saveCard(c); audit('CARD_REPLACE',me().email); toast('Card replaced'); renderCards(); });
+}
+
+/* ---------------- NOTIFICATIONS ---------------- */
+function renderNotifications(){
+  const mine=DB.get('notifications',[]).filter(n=>n.email===me().email);
+  shell('notifications', `<div class="row mb"><button class="btn small ghost" id="nt_read">Mark all as read</button><button class="btn small ghost" id="nt_clear">Clear all</button></div>
+  ${mine.length?mine.map(n=>`<div class="card mb" style="padding:14px;${n.read?'opacity:.6':''};border-left:4px solid ${n.read?'var(--line)':'var(--brand)'}"><b>${esc(n.title)}</b><p class="muted" style="font-size:13px">${esc(n.body)}</p><p class="muted" style="font-size:11px;margin-top:4px">${fdate(n.time)}</p></div>`).join(''):'<p class="muted">No notifications.</p>'}`);
+  $('#nt_read').onclick=()=>{ const n=DB.get('notifications',[]); n.forEach(x=>{if(x.email===me().email)x.read=true;}); DB.set('notifications',n); renderNotifications(); };
+  $('#nt_clear').onclick=()=>{ DB.set('notifications',DB.get('notifications',[]).filter(n=>n.email!==me().email)); renderNotifications(); };
+}
+
+/* ---------------- PROFILE ---------------- */
+function renderProfile(){
+  const u=me();
+  shell('profile', `<div class="grid c2"><div class="card" style="text-align:center">
+    <div style="width:90px;height:90px;border-radius:50%;margin:0 auto;background:linear-gradient(135deg,var(--brand),var(--brand2));color:#fff;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800">${esc(u.name[0])}</div>
+    <h3 class="mt">${esc(u.name)}</h3><p class="muted">${statusBadge(u.frozen?'frozen':'active')} demo account</p>
+    <hr><div class="checkline"><span>Gmail address</span><b>${esc(u.email)}</b></div>
+    <div class="checkline"><span>Account number</span><b class="mono">${esc(u.acct)}</b></div>
+    <div class="checkline"><span>Registration date</span><b>${esc(u.joined)}</b></div>
+    <div class="checkline"><span>Demo balance</span><b>${hideBal?'••••':fmt(u.balance)}</b></div></div>
+  <div class="card"><h3>Edit profile</h3><label>Full name</label><input id="pf_name" value="${esc(u.name)}">
+    <label>Change profile picture (initial letter)</label><input id="pf_pic" maxlength="1" placeholder="${esc(u.name[0])}">
+    <button class="btn mt" id="pf_save">Save changes</button>
+    <p class="muted mt" style="font-size:12px">Email and account number are fixed identifiers.</p></div></div>`);
+  $('#pf_save').onclick=()=>{ const n=$('#pf_name').value.trim(); if(!n) return toast('Name cannot be empty'); saveMe({name:n}); if($('#pf_pic').value.trim()) saveMe({avatar:$('#pf_pic').value.trim()}); toast('Profile updated'); renderProfile(); };
+}
+
+/* ---------------- SETTINGS ---------------- */
+function renderSettings(){
+  const u=me(); const prefs=DB.get('prefs_'+u.email,{dark:document.documentElement.dataset.theme==='dark',fa:false,fp:false,twofa:false,notif:true});
+  const logins=DB.get('audit',[]).filter(a=>a.action==='LOGIN'||a.action==='LOGOUT').slice(0,6);
+  shell('settings', `<div class="grid c2">
+  <div class="card"><h3>Security</h3>
+    <div class="checkline"><span>Change password</span><button class="btn small ghost" id="st_pw">Change</button></div>
+    <div class="checkline"><span>Change transfer PIN</span><button class="btn small ghost" id="st_pin">Change</button></div>
+    <div class="checkline"><span>Two-factor authentication</span><button class="btn small ${prefs.twofa?'':'ghost'}" id="st_2fa">${prefs.twofa?'On':'Off'}</button></div>
+    <div class="checkline"><span>Face ID (demo)</span><button class="btn small ghost" onclick="toast('Face ID is a demo placeholder')">Setup</button></div>
+    <div class="checkline"><span>Fingerprint (demo)</span><button class="btn small ghost" onclick="toast('Fingerprint is a demo placeholder')">Setup</button></div>
+  </div>
+  <div class="card"><h3>Preferences</h3>
+    <div class="checkline"><span>Dark mode</span><button class="btn small ${prefs.dark?'':'ghost'}" id="st_dark">${prefs.dark?'On':'Off'}</button></div>
+    <div class="checkline"><span>Notifications</span><button class="btn small ${prefs.notif?'':'ghost'}" id="st_ntf">${prefs.notif?'On':'Off'}</button></div>
+    <div class="checkline"><span>Language</span><select id="st_lang" style="width:130px"><option>English</option><option>Français</option><option>Español</option></select></div>
+    <hr><div class="checkline"><span>Active devices</span><span class="muted">This browser · current session</span></div>
+    <div class="checkline"><span>Privacy settings</span><button class="btn small ghost" onclick="toast('Privacy: demo data stays in your browser')">View</button></div>
+  </div>
+  <div class="card"><h3>Login history</h3>${logins.map(l=>`<div class="checkline"><span>${l.action}</span><span class="muted">${fdate(l.time)}</span></div>`).join('')||'<p class="muted">No login records.</p>'}</div>
+  <div class="card"><h3>Danger zone</h3><div class="checkline"><span>Account closure request</span><button class="btn small danger" id="st_del">Delete account</button></div></div></div>`);
+  const savePrefs=()=>DB.set('prefs_'+u.email,prefs);
+  $('#st_dark').onclick=()=>{ prefs.dark=!prefs.dark; savePrefs(); document.documentElement.dataset.theme=prefs.dark?'dark':'light'; renderSettings(); };
+  $('#st_ntf').onclick=()=>{ prefs.notif=!prefs.notif; savePrefs(); renderSettings(); };
+  $('#st_2fa').onclick=()=>{ prefs.twofa=!prefs.twofa; savePrefs(); notify(u.email,'2FA '+(prefs.twofa?'enabled':'disabled'),'Your two-factor setting changed.'); renderSettings(); };
+  $('#st_pw').onclick=()=>modal(`<h3>Change password</h3><label>Current password</label><input id="cp0" type="password"><label>New password</label><input id="cp1" type="password"><label>Confirm new password</label><input id="cp2" type="password"><button class="btn mt" style="width:100%" id="cp_go">Update password</button>`);
+  $('#st_pin').onclick=()=>modal(`<h3>Change transfer PIN</h3><label>Current PIN</label><input id="pn0" maxlength="4"><label>New PIN (4 digits)</label><input id="pn1" maxlength="4"><button class="btn mt" style="width:100%" id="pn_go">Update PIN</button>`);
+  document.addEventListener('click',e=>{
+    if(e.target&&e.target.id==='cp_go'){ if($('#cp0').value!==u.pass) return toast('Wrong current password'); if($('#cp1').value.length<6) return toast('Min 6 characters'); if($('#cp1').value!==$('#cp2').value) return toast('Passwords do not match'); saveMe({pass:$('#cp1').value}); notify(u.email,'Password changed','Your NOVA BANK demo password was changed.'); audit('PASSWORD_CHANGE',u.email); closeModal(); toast('Password updated'); }
+    if(e.target&&e.target.id==='pn_go'){ if($('#pn0').value!==u.pin) return toast('Wrong current PIN'); if(!/^\d{4}$/.test($('#pn1').value)) return toast('PIN must be 4 digits'); saveMe({pin:$('#pn1').value}); closeModal(); toast('PIN updated'); }
+  });
+  $('#st_del').onclick=()=>confirmBox('Permanently delete this demo account?',()=>{ const us=users().filter(x=>x.email!==u.email); saveUsers(us); localStorage.removeItem('nova_session'); audit('ACCOUNT_DELETED',u.email); toast('Account deleted'); renderAuth('login'); });
+}
+
+/* ---------------- SAVINGS ---------------- */
+function renderSavings(){
+  const sv=DB.get('savings',{goals:[]});
+  const totalSaved=sv.goals.reduce((a,g)=>a+g.saved,0), totalTarget=sv.goals.reduce((a,g)=>a+g.target,0);
+  shell('savings', `<div class="grid c2">
+  <div class="card"><h3>Savings dashboard (demo)</h3><div class="big">${fmt(totalSaved)}</div><p class="muted">of ${fmt(totalTarget)} across ${sv.goals.length} goals</p>
+    <div class="progress mt"><div style="width:${totalTarget?Math.min(100,totalSaved/totalTarget*100):0}%"></div></div>
+    <hr><h3>Create savings goal</h3><label>Goal name</label><input id="sg_n" placeholder="e.g. Vacation"><label>Target amount</label><input id="sg_t" type="number" min="1"><button class="btn mt" style="width:100%" id="sg_go">Create goal</button></div>
+  <div class="card"><h3>Savings calculator</h3><label>Monthly deposit</label><input id="sc_m" type="number" value="100"><label>Annual interest (demo)</label><input id="sc_r" type="number" value="4"><label>Years</label><input id="sc_y" type="number" value="2">
+    <button class="btn mt" id="sc_go" style="width:100%">Calculate</button><div class="mt" id="sc_out"></div></div></div>
+  <div class="card mt"><h3>Goals & history</h3>${sv.goals.map((g,i)=>`<div class="mb"><div class="row" style="justify-content:space-between"><b>${esc(g.name)}</b><span class="muted">${fmt(g.saved)} / ${fmt(g.target)}</span></div>
+    <div class="progress"><div style="width:${Math.min(100,g.saved/g.target*100)}%"></div></div>
+    <div class="row mt"><button class="btn small ghost" onclick="addSave(${i},100)">+ Add $100 (demo)</button><button class="btn small ghost" onclick="delGoal(${i})">Delete</button></div></div>`).join('')||'<p class="muted">No goals yet.</p>'}</div>`);
+  $('#sg_go').onclick=()=>{ const n=$('#sg_n').value.trim(), t=parseFloat($('#sg_t').value); if(!n||!t) return toast('Enter name and target'); sv.goals.push({name:n,target:t,saved:0}); DB.set('savings',sv); toast('Goal created'); renderSavings(); };
+  $('#sc_go').onclick=()=>{ const m=parseFloat($('#sc_m').value)||0,r=parseFloat($('#sc_r').value)/100/12,y=parseFloat($('#sc_y').value)||0; const fv=m*((Math.pow(1+r,y*12)-1)/r)*(1+r);
+    $('#sc_out').innerHTML=`<div class="checkline"><span>Total deposited</span><b>${fmt(m*y*12)}</b></div><div class="checkline"><span>Projected balance</span><b style="color:var(--ok)">${fmt(isFinite(fv)?fv:m*y*12)}</b></div>`; };
+}
+function addSave(i,amt){ const sv=DB.get('savings'); sv.goals[i].saved+=amt; DB.set('savings',sv); toast('Added to goal'); renderSavings(); }
+function delGoal(i){ const sv=DB.get('savings'); sv.goals.splice(i,1); DB.set('savings',sv); renderSavings(); }
+
+/* ---------------- SUPPORT ---------------- */
+function renderSupport(){
+  const tickets=DB.get('tickets',[]).filter(t=>t.email===me().email);
+  const faqs=[['How do transfers work?','Transfers move simulated funds between demo accounts instantly, with matching receipts for sender and receiver.'],
+  ['Do deposits add money to my account?','No. Deposits are not enabled and never credit your balance — requests are recorded for review only.'],
+  ['Why was my withdrawal reset?','Withdrawal verification runs on a 5-hour countdown. If it is not completed in time, the request is rejected and returns to the photo upload step.'],
+  ['Is this a real bank?','No. NOVA BANK is a demo/simulation for development and testing. No real money exists here.']];
+  shell('support', `<div class="grid c2">
+  <div class="card"><h3>Help center — FAQs</h3>${faqs.map(f=>`<details class="mb"><summary style="cursor:pointer;font-weight:600">${f[0]}</summary><p class="muted mt" style="font-size:13px">${f[1]}</p></details>`).join('')}</div>
+  <div class="card"><h3>Contact support</h3><label>Topic</label><select id="sp_t"><option>Report a problem</option><option>Report suspicious activity</option><option>Submit complaint</option><option>Transaction dispute</option></select>
+    <label>Message</label><textarea id="sp_m" rows="4" placeholder="Describe your issue…"></textarea>
+    <button class="btn mt" style="width:100%" id="sp_go">Submit ticket</button>
+    <button class="btn ghost mt" style="width:100%" onclick="toast('Live chat is not implemented in this demo')">Live chat (unavailable)</button></div></div>
+  <div class="card mt"><h3>Support ticket history</h3>${tickets.length?`<table><tr><th>ID</th><th>Topic</th><th>Status</th><th>Date</th></tr>${tickets.map(t=>`<tr><td class="mono">${t.id}</td><td>${esc(t.topic)}</td><td>${statusBadge(t.status)}</td><td>${fdate(t.time)}</td></tr>`).join('')}</table>`:'<p class="muted">No tickets yet.</p>'}</div>`);
+  $('#sp_go').onclick=()=>{ const m=$('#sp_m').value.trim(); if(!m) return toast('Write a message first'); const ts=DB.get('tickets',[]); ts.unshift({id:uid(),email:me().email,topic:$('#sp_t').value,msg:m,status:'pending',time:now()}); DB.set('tickets',ts); audit('TICKET',$('#sp_t').value); toast('Ticket submitted'); renderSupport(); };
+}
+
+/* ---------------- ADMIN ---------------- */
+function renderAdmin(){
+  const us=users(), tx=txns(), dep=DB.get('deposits',[]), wd=DB.get('withdrawals',[]), tk=DB.get('tickets',[]), al=DB.get('audit',[]);
+  shell('admin', `
+  <div class="grid c3">
+    <div class="card"><h3>Registered users</h3><div class="big">${us.length}</div></div>
+    <div class="card"><h3>Transactions</h3><div class="big">${tx.length}</div></div>
+    <div class="card"><h3>Pending tickets</h3><div class="big">${tk.filter(t=>t.status==='pending').length}</div></div>
+  </div>
+  <div class="card mt"><h3>Users</h3><input id="ad_q" class="mb" placeholder="Search users…"><div id="ad_users"></div></div>
+  <div class="grid c2 mt">
+    <div class="card"><h3>Deposit requests (review only)</h3><p class="muted mb" style="font-size:12px">Deposits never credit balances — no manual fake credits permitted.</p>
+      ${dep.map(d=>`<div class="checkline"><span class="mono">${d.ref}</span><b>${fmt(d.amount)} · ${statusBadge(d.status)}</b></div>`).join('')||'<p class="muted">None.</p>'}</div>
+    <div class="card"><h3>Withdrawal requests</h3>
+      ${wd.map(w=>`<div class="checkline"><span class="mono">${w.ref}</span><b>${fmt(w.amount)} · ${statusBadge(w.status)}</b></div>`).join('')||'<p class="muted">None.</p>'}</div>
+  </div>
+  <div class="card mt"><h3>Complaints / tickets</h3>${tk.map(t=>`<div class="checkline"><span>${esc(t.topic)} — ${esc(t.msg.slice(0,50))}…</span><b>${statusBadge(t.status)}</b></div>`).join('')||'<p class="muted">None.</p>'}</div>
+  <div class="card mt"><h3>Audit log</h3>${al.slice(0,15).map(l=>`<div class="checkline"><span><b>${l.action}</b> — ${esc(l.detail||'')}</span><span class="muted">${fdate(l.time)}</span></div>`).join('')||'<p class="muted">Empty.</p>'}</div>
+  <div class="card mt"><h3>Admin security</h3><div class="checkline"><span>Admin role</span><span class="mono">${esc(me().email)}</span></div><div class="checkline"><span>Permissions</span><b>Read-only review · suspend demo accounts · send notifications · audit log</b></div></div>`);
+  const drawUsers=q=>{ $('#ad_users').innerHTML=`<table><tr><th>Name</th><th>Email</th><th>Acct</th><th>Balance</th><th>Status</th><th></th></tr>`+
+    us.filter(u=>!q||(u.name+u.email+u.acct).toLowerCase().includes(q)).map(u=>`<tr><td>${esc(u.name)}</td><td>${esc(u.email)}</td><td class="mono">${esc(u.acct)}</td><td>${u.role==='admin'?'—':fmt(u.balance)}</td><td>${statusBadge(u.frozen?'frozen':'active')}</td>
+    <td>${u.role!=='admin'?`<button class="btn small ghost" onclick="adminSuspend('${u.email}')">${u.frozen?'Unsuspend':'Suspend'}</button>`:''}</td></tr>`).join('')+`</table>`; };
+  $('#ad_q').oninput=e=>drawUsers(e.target.value.toLowerCase()); drawUsers('');
+}
+function adminSuspend(email){
+  const us=users(); const u=us.find(x=>x.email===email); u.frozen=!u.frozen; saveUsers(us);
+  notify(email, u.frozen?'Account suspended':'Account restored', 'An admin action was applied to your demo account.');
+  audit('ADMIN_'+(u.frozen?'SUSPEND':'UNSUSPEND'), email); toast('Updated'); renderAdmin();
+}
+
+/* ---------------- INIT ---------------- */
+(function init(){
+  if(sess() && sessionStorage.getItem('nova_volatile') && !localStorage.getItem('nova_remember_ok')){ /* keep simple: session persists */ }
+  const prefDark = (()=>{ const s=sess(); return s ? (DB.get('prefs_'+s,{dark:false}).dark) : false; })();
+  document.documentElement.dataset.theme = prefDark ? 'dark' : 'light';
+  route();
+})();
+</script>
+</body>
+</html>
